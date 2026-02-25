@@ -13,10 +13,6 @@ public class NanoScript extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        // Klasörleri oluştur
-        getDataFolder().mkdirs();
-        java.io.File scriptsDir = getScriptsFolder();
-        if (!scriptsDir.exists()) scriptsDir.mkdirs();
 
         // Script yöneticisini başlat
         scriptManager = new ScriptManager(this);
@@ -27,10 +23,10 @@ public class NanoScript extends JavaPlugin {
         getCommand("ns").setTabCompleter(nsCommand);
 
         // Örnek script oluştur (ilk kurulumda)
-        createExampleScript();
-
-        getLogger().info("§aNanoScript v1.0.0 aktif! §7Scripts klasörü: " + scriptsDir.getPath());
+        createExampleScripts();
+        getLogger().info("§aNanoScript v1.0.0 aktif! §7Scripts klasörü: " + getScriptsFolder().getPath());
         getLogger().info("§7Kullanım: /ns load all  |  /ns load <dosya.js>  |  /ns list");
+        scriptManager.loadAll();
     }
 
     @Override
@@ -53,14 +49,29 @@ public class NanoScript extends JavaPlugin {
         return new java.io.File(getDataFolder(), "scripts");
     }
 
-    private void createExampleScript() {
-        java.io.File example = new java.io.File(getScriptsFolder(), "example.js");
-        if (!example.exists()) {
-            try (java.io.InputStream in = getResource("example.js")) {
-                if (in != null) {
-                    java.nio.file.Files.copy(in, example.toPath());
+    private void createExampleScripts() {
+        java.io.File scriptsFolder = getScriptsFolder();
+
+        // Eğer klasör yoksa önce klasörü oluştur
+        if (!scriptsFolder.exists()) {
+            scriptsFolder.mkdirs();
+
+            // Kopyalanmasını istediğin dosyaların isimlerini buraya ekle
+            String[] exampleFiles = {"example.js", "economy.js"};
+
+            // Listedeki her bir dosya için kopyalama işlemini yap
+            for (String fileName : exampleFiles) {
+                java.io.File targetFile = new java.io.File(scriptsFolder, fileName);
+
+                try (java.io.InputStream in = getResource(fileName)) {
+                    if (in != null) {
+                        java.nio.file.Files.copy(in, targetFile.toPath());
+                    }
+                } catch (java.io.IOException ignored) {
+                    // Spesifik giriş/çıkış hatalarını yakalar
                 }
-            } catch (Exception ignored) {}
+            }
         }
     }
+
 }

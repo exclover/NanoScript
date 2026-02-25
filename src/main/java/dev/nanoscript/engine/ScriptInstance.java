@@ -2,6 +2,7 @@ package dev.nanoscript.engine;
 
 import dev.nanoscript.NanoScript;
 import dev.nanoscript.api.ScriptAPI;
+import dev.nanoscript.api.StorageManager;
 import dev.nanoscript.jsengine.*;
 import dev.nanoscript.listener.DynamicCommand;
 import dev.nanoscript.listener.DynamicListener;
@@ -29,6 +30,9 @@ public class ScriptInstance {
     // JS motoru
     private NanoEngine engine;
     private ScriptAPI api;
+    private StorageManager storage;
+
+
 
     // Kayıtlı kaynaklar
     private final List<DynamicListener> eventListeners = new ArrayList<>();
@@ -38,6 +42,7 @@ public class ScriptInstance {
     public ScriptInstance(NanoScript plugin, File file) {
         this.plugin = plugin;
         this.file = file;
+        this.storage = new StorageManager(plugin);
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -54,7 +59,7 @@ public class ScriptInstance {
             engine = new NanoEngine();
 
             // ScriptAPI'yi motora bağla
-            api = new ScriptAPI(plugin, this, engine);
+            api = new ScriptAPI(plugin, this, engine, storage);
             api.installGlobals();
 
             // Dosyayı çalıştır

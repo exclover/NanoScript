@@ -151,7 +151,7 @@ public class Interpreter {
             }
 
             case Node.ReturnStmt r ->
-                throw new ReturnSignal(r.value() != null ? evalExpr(r.value(), env) : JSValue.UNDEFINED);
+                    throw new ReturnSignal(r.value() != null ? evalExpr(r.value(), env) : JSValue.UNDEFINED);
 
             case Node.BreakStmt b    -> throw new BreakSignal(b.label());
             case Node.ContinueStmt c -> throw new ContinueSignal(c.label());
@@ -455,6 +455,11 @@ public class Interpreter {
     }
 
     private JSValue callMethod(JSValue obj, String methodName, JSValue[] args, Environment env) {
+        // Number methods (toFixed, toString, etc.)
+        if (obj.isNumber()) {
+            return callNumberMethod(obj.asNumber(), methodName, args);
+        }
+
         // String methods
         if (obj.isString()) {
             return JSBuiltins.callStringMethod(obj.asString(), methodName, args);
@@ -624,5 +629,31 @@ public class Interpreter {
 
     public JSValue callFunction(JSValue fn, JSValue[] args) {
         return callFunction(fn, JSValue.UNDEFINED, args);
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    //  Number method dispatch
+    // ──────────────────────────────────────────────────────────────────
+
+    private JSValue callNumberMethod(double num, String method, JSValue[] args) {
+        return switch (method) {
+            case "toFixed" -> {
+                int decimals = args.length > 0 ? args[0].asInt() : 0;
+                decimals = Math.max(0, Math.min(20, decimals));
+                yield JSValue.of(String.format("%." + decimals + "f", num));
+            }
+            case "toPrecision" -> {
+                int precision = args.length > 0 ? args[0].asInt() : 1;
+                yield JSValue.of(String.format("%." + Math.max(1, precision) + "g", num));
+            }
+            case "toString" -> {
+                int radix = args.length > 0 ? args[0].asInt() : 10;
+                if (radix == 10) yield JSValue.of(JSValue.of(num).asString());
+                yield JSValue.of(Long.toString((long) num, radix));
+            }
+            case "toLocaleString", "valueOf" -> JSValue.of(JSValue.of(num).asString());
+            default -> throw new JsError(
+                    "'" + JSValue.of(num).asString() + "' üzerinde '" + method + "' metodu bulunamadı");
+        };
     }
 }
